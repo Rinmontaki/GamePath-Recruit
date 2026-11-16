@@ -1,0 +1,32 @@
+# Diagramas locales (no subir a GitHub)
+Diagramas/
+
+# Entornos virtuales de Python
+.venv/
+venv/
+env/
+
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Configuración local
+.env
+.env.*
+!.env.example
+
+# Bases de datos y archivos locales
+*.db
+*.sqlite
+*.sqlite3
+
+# Grabaciones de jugadores
+uploads/
+*.mp4
+*.mov
+*.avi
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
