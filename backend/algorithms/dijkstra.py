@@ -1,9 +1,11 @@
 
 """Dijkstra shortest-path algorithm for GamePath Recruit."""
 
+from asyncio import graph
 import heapq
 from collections.abc import Iterable
 from dataclasses import dataclass
+from tracemalloc import start
 
 from backend.structures.graph import (
     DirectedWeightedGraph,
@@ -24,7 +26,10 @@ def dijkstra(
     graph: DirectedWeightedGraph,
     target: str,
     granted_requirements: Iterable[str] = (),
+    *,
+    start_node: str | None = None,
 ) -> PathResult | None:
+
     """Find the minimum-cost path from entry to target."""
     granted = frozenset(granted_requirements)
 
@@ -32,8 +37,8 @@ def dijkstra(
         raise PermissionError(
             "Recruiter admission is required to enter the graph."
         )
-
-    start = graph.entry_node
+        
+    start = graph.entry_node if start_node is None else start_node
 
     graph.get_node(start)
     graph.get_node(target)

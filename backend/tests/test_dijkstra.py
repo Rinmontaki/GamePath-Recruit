@@ -249,6 +249,57 @@ class TestDijkstra(unittest.TestCase):
             ("A", "B", "C"),
         )
         self.assertEqual(result.total_hours, 2.0)
+        
+        
+    def test_custom_start_after_aim(self):
+        """Plan from the state where aim is completed."""
+        result = dijkstra(
+            self.graph,
+            "reevaluation",
+            self.admission,
+            start_node="training_10",
+        )
+
+        self.assertEqual(
+            result.nodes,
+            ("training_10", "training_11", "reevaluation"),
+        )
+        self.assertEqual(result.total_hours, 4.0)
+
+    def test_custom_start_after_tactics(self):
+        """Plan from the state where tactics are completed."""
+        result = dijkstra(
+            self.graph,
+            "reevaluation",
+            self.admission,
+            start_node="training_01",
+        )
+
+        self.assertEqual(
+            result.nodes,
+            ("training_01", "training_11", "reevaluation"),
+        )
+        self.assertEqual(result.total_hours, 3.0)
+
+    def test_custom_start_requires_admission(self):
+        """Changing the start must not bypass admission."""
+        with self.assertRaises(PermissionError):
+            dijkstra(
+                self.graph,
+                "reevaluation",
+                start_node="training_11",
+            )
+
+    def test_invalid_custom_start(self):
+        """Reject a starting node absent from the graph."""
+        with self.assertRaises(ValueError):
+            dijkstra(
+                self.graph,
+                "reevaluation",
+                self.admission,
+                start_node="unknown_node",
+            )
+
 
 
 if __name__ == "__main__":
