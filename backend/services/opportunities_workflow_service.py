@@ -90,12 +90,19 @@ class OpportunitiesWorkflowService:
             )
 
         with self._database.connection() as connection:
+            
             reevaluation = connection.execute(
                 """
                 SELECT
                     r.approved,
                     r.reviewer_id,
-                    v.is_active
+                    r.vod_review_id,
+                    v.is_active,
+                    (
+                        SELECT MAX(vr.review_id)
+                        FROM vod_reviews AS vr
+                        WHERE vr.applicant_id = r.applicant_id
+                    ) AS latest_vod_review_id
                 FROM reevaluations AS r
                 JOIN reviewers AS v
                     ON v.reviewer_id = r.reviewer_id
@@ -124,6 +131,16 @@ class OpportunitiesWorkflowService:
             raise PermissionError(
                 "The reevaluation reviewer is not authorized "
                 "or is inactive."
+            )
+        
+        if (
+            reevaluation["vod_review_id"] is None
+            or reevaluation["vod_review_id"]
+            != reevaluation["latest_vod_review_id"]
+        ):
+            raise PermissionError(
+                "The reevaluation does not belong "
+                "to the current VOD admission."
             )
 
         granted_requirements = (

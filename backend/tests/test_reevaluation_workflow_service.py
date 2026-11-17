@@ -514,6 +514,136 @@ class TestReevaluationWorkflowService(unittest.TestCase):
             rows[0]["feedback"],
             "Primera decision.",
         )
+        
+    
+    def test_new_vod_cycle_requires_new_training(self):
+        """Do not reuse completed skills from a previous VOD."""
+        self.prepare("ASP-001")
+
+        first_id = self.record(
+            approved=True,
+            applicant_id="ASP-001",
+        )
+
+        self.assertEqual(first_id, 1)
+
+        with self.database.connection() as connection:
+            connection.execute(
+                """
+                UPDATE applicants
+                SET vod_reference = ?
+                WHERE applicant_id = ?
+                """,
+                ("vods/new_cycle.mp4", "ASP-001"),
+            )
+
+        new_review = self.make_review(
+            applicant_id="ASP-001",
+            decision=ReviewDecision.APPROVED,
+            vod_reference="vods/new_cycle.mp4",
+        )
+
+        self.review_workflow.record_review(
+            new_review,
+            authenticated_reviewer_id="REC-001",
+        )
+
+        with self.assertRaises(PermissionError):
+            self.record(
+                approved=True,
+                applicant_id="ASP-001",
+            )
+
+        self.assertEqual(
+            len(self.history("ASP-001")),
+            1,
+        )
+        
+        
+    def test_new_vod_cycle_allows_independent_training(self):
+        """Keep training histories separate across VOD reviews."""
+        self.prepare("ASP-001")
+
+        with self.database.connection() as connection:
+            first_review_id = connection.execute(
+                """
+                SELECT MAX(review_id)
+                FROM vod_reviews
+                WHERE applicant_id = ?
+                """,
+                ("ASP-001",),
+            ).fetchone()[0]
+
+        with self.database.connection() as connection:
+            connection.execute(
+                """
+                UPDATE applicants
+                SET vod_reference = ?
+                WHERE applicant_id = ?
+                """,
+                ("vods/new_cycle.mp4", "ASP-001"),
+            )
+
+        new_review = self.make_review(
+            applicant_id="ASP-001",
+            vod_reference="vods/new_cycle.mp4",
+        )
+
+        self.review_workflow.record_review(
+            new_review,
+            authenticated_reviewer_id="REC-001",
+        )
+
+        plan = self.training_workflow.plan_for_applicant(
+            "ASP-001"
+        )
+
+        self.assertEqual(plan.start_node, "training_00")
+        self.assertEqual(plan.estimated_hours, 6.0)
+
+        self.complete_training("ASP-001")
+
+        new_plan = self.training_workflow.plan_for_applicant(
+            "ASP-001"
+        )
+
+        self.assertEqual(new_plan.start_node, "training_11")
+
+        with self.database.connection() as connection:
+            second_review_id = connection.execute(
+                """
+                SELECT MAX(review_id)
+                FROM vod_reviews
+                WHERE applicant_id = ?
+                """,
+                ("ASP-001",),
+            ).fetchone()[0]
+
+            rows = connection.execute(
+                """
+                SELECT vod_review_id, skill
+                FROM skill_completions
+                WHERE applicant_id = ?
+                """,
+                ("ASP-001",),
+            ).fetchall()
+
+        self.assertNotEqual(first_review_id, second_review_id)
+        self.assertEqual(len(rows), 4)
+
+        actual = {
+            (row["vod_review_id"], row["skill"])
+            for row in rows
+        }
+
+        expected = {
+            (first_review_id, "aim"),
+            (first_review_id, "tactics"),
+            (second_review_id, "aim"),
+            (second_review_id, "tactics"),
+        }
+
+        self.assertEqual(actual, expected)
 
 
 if __name__ == "__main__":

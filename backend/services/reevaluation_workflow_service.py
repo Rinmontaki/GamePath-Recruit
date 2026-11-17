@@ -54,7 +54,7 @@ class ReevaluationWorkflowService:
         feedback: str,
         authenticated_reviewer_id: str,
     ) -> int:
-        """Record an authorized reevaluation after training."""
+        """Persist a reevaluation linked to its current VOD."""
         self._validate_identifier(applicant_id, "Applicant ID")
         self._validate_identifier(
             authenticated_reviewer_id,
@@ -88,19 +88,64 @@ class ReevaluationWorkflowService:
             )
 
         with self._database.connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+
+            current_review = connection.execute(
+                """
+                SELECT
+                    v.review_id,
+                    v.decision,
+                    v.vod_reference,
+                    a.vod_reference AS applicant_vod
+                FROM vod_reviews AS v
+                JOIN applicants AS a
+                    ON a.applicant_id = v.applicant_id
+                WHERE v.applicant_id = ?
+                ORDER BY v.review_id DESC
+                LIMIT 1
+                """,
+                (applicant_id,),
+            ).fetchone()
+
+            if (
+                current_review is None
+                or current_review["decision"] != "approved"
+                or current_review["vod_reference"]
+                != current_review["applicant_vod"]
+            ):
+                raise PermissionError(
+                    "A current approved VOD review is required."
+                )
+
+            reviewer = connection.execute(
+                """
+                SELECT is_active
+                FROM reviewers
+                WHERE reviewer_id = ?
+                """,
+                (reviewer_id,),
+            ).fetchone()
+
+            if reviewer is None or reviewer["is_active"] != 1:
+                raise PermissionError(
+                    "An active reviewer account is required."
+                )
+
             cursor = connection.execute(
                 """
                 INSERT INTO reevaluations (
                     applicant_id,
                     reviewer_id,
+                    vod_review_id,
                     approved,
                     feedback
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
                 """,
                 (
                     applicant_id,
                     reviewer_id,
+                    current_review["review_id"],
                     int(approved),
                     feedback,
                 ),
@@ -138,7 +183,10 @@ class ReevaluationWorkflowService:
             )
 
     @staticmethod
-    def _validate_identifier(value: str, field_name: str) -> None:
+    def _validate_identifier(
+        value: str,
+        field_name: str,
+    ) -> None:
         """Require a non-empty identifier."""
         if not isinstance(value, str) or not value.strip():
             raise ValueError(

@@ -579,6 +579,37 @@ class TestOpportunitiesWorkflowService(unittest.TestCase):
                         self.graph,
                         authorized,
                     )
+    
+    
+    def test_new_vod_cycle_invalidates_previous_reevaluation(self):
+        """Do not reuse reevaluation approval for a new VOD."""
+        self.unlock("ASP-001")
+
+        self.assertEqual(len(self.routes("ASP-001")), 3)
+
+        with self.database.connection() as connection:
+            connection.execute(
+                """
+                UPDATE applicants
+                SET vod_reference = ?
+                WHERE applicant_id = ?
+                """,
+                ("vods/new_cycle.mp4", "ASP-001"),
+            )
+
+        new_review = self.make_review(
+            applicant_id="ASP-001",
+            vod_reference="vods/new_cycle.mp4",
+        )
+
+        self.review_workflow.record_review(
+            new_review,
+            authenticated_reviewer_id="REC-001",
+        )
+
+        with self.assertRaises(PermissionError):
+            self.routes("ASP-001")
+   
 
 
 if __name__ == "__main__":
