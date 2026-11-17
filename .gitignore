@@ -30,3 +30,9 @@ uploads/
 # Archivos del sistema operativo
 .DS_Store
 Thumbs.db
+
+# SQLite local databases
+backend/data/*.sqlite3
+backend/data/*.sqlite3-*
+backend/data/*.db
+backend/data/*.db-*
