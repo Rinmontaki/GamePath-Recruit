@@ -1,0 +1,81 @@
+
+{
+  "type": "decision",
+  "node_id": "D01",
+  "question": "¿Juegas al menos 5 horas diarias en promedio?",
+  "condition": {
+    "field": "daily_play_hours",
+    "operator": ">=",
+    "value": 5
+  },
+  "left": {
+    "type": "decision",
+    "node_id": "D02",
+    "question": "¿Aceptas seguir un plan de entrenamiento estructurado?",
+    "condition": {
+      "field": "accepts_training",
+      "operator": "==",
+      "value": true
+    },
+    "left": {
+      "type": "decision",
+      "node_id": "D03",
+      "question": "¿Tu peak rank es Oro o superior?",
+      "condition": {
+        "field": "peak_rank",
+        "operator": ">=",
+        "value": "oro"
+      },
+      "left": {
+        "type": "decision",
+        "node_id": "D04",
+        "question": "¿Tu peak rank es Diamante o superior?",
+        "condition": {
+          "field": "peak_rank",
+          "operator": ">=",
+          "value": "diamante"
+        },
+        "left": {
+          "type": "result",
+          "node_id": "L01",
+          "status": "preselected",
+          "classification": "Preselección avanzada",
+          "reason": "Cumples los criterios iniciales de disponibilidad, compromiso y rango competitivo.",
+          "recommendation": "Continuar con la revisión de VOD y la evaluación del reclutador."
+        },
+        "right": {
+          "type": "result",
+          "node_id": "L02",
+          "status": "preselected",
+          "classification": "Preselección desarrollo",
+          "reason": "Cumples los criterios iniciales y tu peak rank corresponde a Oro o Platino.",
+          "recommendation": "Continuar con la revisión de VOD para identificar las habilidades que necesitas fortalecer."
+        }
+      },
+      "right": {
+        "type": "result",
+        "node_id": "L03",
+        "status": "orientation",
+        "classification": "Fortalecimiento de fundamentos",
+        "reason": "Tu peak rank está por debajo del mínimo Oro establecido para esta convocatoria.",
+        "recommendation": "Trabajar fundamentos de puntería, posicionamiento, comunicación y toma de decisiones antes de una nueva postulación."
+      }
+    },
+    "right": {
+      "type": "result",
+      "node_id": "L04",
+      "status": "orientation",
+      "classification": "Compromiso de entrenamiento pendiente",
+      "reason": "El programa requiere disposición para seguir actividades planificadas y recibir retroalimentación.",
+      "recommendation": "Revisar las condiciones del programa y postularse cuando exista disponibilidad para asumirlas."
+    }
+  },
+  "right": {
+    "type": "result",
+    "node_id": "L05",
+    "status": "orientation",
+    "classification": "Disponibilidad insuficiente",
+    "reason": "El tiempo indicado es inferior a las 5 horas diarias definidas para esta convocatoria. Esto no determina tu nivel de habilidad.",
+    "recommendation": "Explorar opciones de práctica flexible y considerar una nueva postulación si cambia tu disponibilidad."
+  }
+}
