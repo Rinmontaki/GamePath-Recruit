@@ -1,0 +1,133 @@
+
+{
+  "graph_id": "gamepath_training_v1",
+  "directed": true,
+  "weighted": true,
+  "weight_unit": "hours_of_preparation",
+  "entry_node": "training_00",
+  "entry_requirements": [
+    "recruiter_admission_approved"
+  ],
+  "nodes": [
+    {
+      "id": "training_00",
+      "type": "training_state",
+      "label": "Aim y táctica pendientes",
+      "completed": {
+        "aim": false,
+        "tactics": false
+      }
+    },
+    {
+      "id": "training_10",
+      "type": "training_state",
+      "label": "Aim completado",
+      "completed": {
+        "aim": true,
+        "tactics": false
+      }
+    },
+    {
+      "id": "training_01",
+      "type": "training_state",
+      "label": "Táctica completada",
+      "completed": {
+        "aim": false,
+        "tactics": true
+      }
+    },
+    {
+      "id": "training_11",
+      "type": "training_state",
+      "label": "Formación completada",
+      "completed": {
+        "aim": true,
+        "tactics": true
+      }
+    },
+    {
+      "id": "reevaluation",
+      "type": "human_review",
+      "label": "Reevaluación mediante VOD"
+    },
+    {
+      "id": "opportunities",
+      "type": "gateway",
+      "label": "Oportunidades habilitadas"
+    },
+    {
+      "id": "tournaments",
+      "type": "opportunity",
+      "label": "Torneos con premios"
+    },
+    {
+      "id": "tryouts",
+      "type": "opportunity",
+      "label": "Pruebas y posibles contratos"
+    },
+    {
+      "id": "sponsorships",
+      "type": "opportunity",
+      "label": "Propuestas de patrocinio"
+    }
+  ],
+  "edges": [
+    {
+      "from": "training_00",
+      "to": "training_10",
+      "activity": "Completar entrenamiento de aim",
+      "weight_hours": 2
+    },
+    {
+      "from": "training_00",
+      "to": "training_01",
+      "activity": "Completar entrenamiento táctico",
+      "weight_hours": 3
+    },
+    {
+      "from": "training_10",
+      "to": "training_11",
+      "activity": "Completar entrenamiento táctico",
+      "weight_hours": 3
+    },
+    {
+      "from": "training_01",
+      "to": "training_11",
+      "activity": "Completar entrenamiento de aim",
+      "weight_hours": 2
+    },
+    {
+      "from": "training_11",
+      "to": "reevaluation",
+      "activity": "Preparar evidencia para reevaluación",
+      "weight_hours": 1
+    },
+    {
+      "from": "reevaluation",
+      "to": "opportunities",
+      "activity": "Obtener aprobación humana",
+      "weight_hours": 0,
+      "requirements": [
+        "human_reevaluation_approved"
+      ]
+    },
+    {
+      "from": "opportunities",
+      "to": "tournaments",
+      "activity": "Preparar inscripción a torneos",
+      "weight_hours": 1
+    },
+    {
+      "from": "opportunities",
+      "to": "tryouts",
+      "activity": "Preparar VOD y currículum competitivo",
+      "weight_hours": 2
+    },
+    {
+      "from": "opportunities",
+      "to": "sponsorships",
+      "activity": "Preparar dossier y propuesta",
+      "weight_hours": 2
+    }
+  ]
+}
